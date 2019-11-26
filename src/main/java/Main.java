@@ -17,7 +17,7 @@ public class Main extends Application {
 		
 		FileInputStream serviceAccount;
 		try {
-			serviceAccount = new FileInputStream("W:\\database.json");
+			serviceAccount = new FileInputStream("src/main/resources/database.json");
 				FirebaseOptions options = new FirebaseOptions.Builder()
 				  .setCredentials(GoogleCredentials.fromStream(serviceAccount))
 				  .setDatabaseUrl("https://bankingsystem-37792.firebaseio.com")

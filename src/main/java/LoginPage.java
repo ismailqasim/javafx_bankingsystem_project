@@ -121,6 +121,13 @@ public class LoginPage {
 			scene.setCursor(Cursor.DEFAULT);
 			if (querySnapshot.get().getDocuments().size() > 0) {
 				DocumentSnapshot data = querySnapshot.get().getDocuments().get(0);
+				if (!data.contains("approved")) {
+					Alert alert = new Alert(AlertType.ERROR);
+					alert.setHeaderText("Your account is not approved yet");
+					alert.setContentText("Please wait for an admin to approve your account");
+					alert.showAndWait();
+					return;
+				}
 				if (!data.getBoolean("approved")) {
 					Alert alert = new Alert(AlertType.ERROR);
 					alert.setHeaderText("Your account is not approved yet");
@@ -132,7 +139,10 @@ public class LoginPage {
 				}
 			} else {
 				// no account available
-				System.out.println("No account available");
+				Alert alert = new Alert(AlertType.ERROR);
+				alert.setHeaderText("We cannot find any account with such ID");
+				alert.setContentText("Please make sure you are entering a correct ID");
+				alert.showAndWait();
 			}
 			for (DocumentSnapshot document : querySnapshot.get().getDocuments()) {
 			  System.out.println(document.getId());
