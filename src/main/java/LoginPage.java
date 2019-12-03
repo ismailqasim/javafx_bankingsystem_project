@@ -50,9 +50,10 @@ public class LoginPage {
 	TextField txtUsername;
 	PasswordField txtPassword;
 	Scene scene;
+	Stage stage;
 	
 	LoginPage() {
-		Stage stage = new Stage();
+		stage = new Stage();
 		stage.setResizable(false);
 		stage.setTitle("AIAS Banking Login");
 		
@@ -65,9 +66,10 @@ public class LoginPage {
 		title.setAlignment(Pos.CENTER);
 		
 		Label accountId = new Label("Enter your account ID:");
-		txtUsername = new TextField();
+		txtUsername = new TextField("31838");
 		txtUsername.setMaxWidth(160);
 		txtPassword = new PasswordField();
+		txtPassword.setText("qwerty");
 		txtPassword.setMaxWidth(160);
 		Label accountPassword = new Label("Enter your account password:");
 		
@@ -136,6 +138,8 @@ public class LoginPage {
 				} else {
 					// login successful
 					System.out.println("Login successful");
+					new Dashboard(data);
+					stage.close();
 				}
 			} else {
 				// no account available
