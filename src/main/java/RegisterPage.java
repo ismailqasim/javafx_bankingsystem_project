@@ -1,3 +1,4 @@
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -89,7 +90,7 @@ public class RegisterPage {
 		HBox hBox = new HBox(10, box1, box2);
 		hBox.setAlignment(Pos.BASELINE_CENTER);
 
-		Button btnRegister = new Button("Register now");
+		final Button btnRegister = new Button("Register now");
 
 		vBox.getChildren().addAll(title, hBox, l3, txtPhone, l4, type, l5, gender, l6, txtPass, btnRegister);
 
@@ -101,6 +102,7 @@ public class RegisterPage {
 			@Override
 			public void handle(ActionEvent event) {
 				scene.setCursor(Cursor.WAIT);
+				btnRegister.setDisable(true);
 				createAccount(txtFirstname.getText(), txtLastname.getText(), txtPhone.getText(),
 						type.getValue(), gender.getValue(), txtPass.getText(), 
 						new Random().nextInt(99999) + 1);
@@ -115,7 +117,7 @@ public class RegisterPage {
 			String gender, 
 			String password,
 			long accountId) {
-		Account account = new Account().createAccount(accountId, firstName, lastName, type, gender, password);
+		Account account = new Account().createAccount(accountId, firstName, lastName, type, gender, password, new Date().toString());
 		ApiFuture<WriteResult> future = db.collection("users").document(accountId+"").set(account);
 
 		future.addListener(new Runnable() {

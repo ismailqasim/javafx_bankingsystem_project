@@ -1,7 +1,10 @@
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -15,6 +18,7 @@ import com.google.cloud.firestore.EventListener;
 import com.google.cloud.firestore.FieldValue;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.FirestoreException;
+import com.google.cloud.firestore.Query.Direction;
 import com.google.cloud.firestore.QuerySnapshot;
 import com.google.cloud.firestore.WriteResult;
 import com.google.firebase.cloud.FirestoreClient;
@@ -31,6 +35,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.DialogEvent;
 import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Tab;
@@ -38,6 +43,7 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.control.Alert;
@@ -91,7 +97,7 @@ public class Dashboard {
 		
 		VBox vBox = new VBox();
 		HBox header = new HBox(20);
-		header.setPrefHeight(100);
+		header.setPrefHeight(80);
 		header.setAlignment(Pos.CENTER);
 		Label title = new Label("AIAS Banking");
 		title.setFont(new Font(30));
@@ -296,10 +302,11 @@ public class Dashboard {
 		
 		nav.getChildren().addAll(info, btnAccDetails,btnLoan,
 				btnTransfer,btnHistory,btnStatement);
-		nav.setPrefHeight(400);
+		nav.setPrefHeight(440);
 		
 		hBox.getChildren().addAll(nav,separator1,body);
 		hBox.setHgrow(body, Priority.ALWAYS);
+		hBox.setPrefHeight(440);
 		
 		header.getChildren().addAll(r2,title,region,imageView,accName,btnLogout,r3);
 		vBox.getChildren().addAll(header, separator, hBox);
@@ -338,13 +345,13 @@ public class Dashboard {
 		final Label l5= new Label("Gender: " + data.getString("gender"));
 		l5.setFont(new Font(16));
 		
-		final Label l6= new Label("Last Transaction: Not yet");
+		final Label l6= new Label("Last Transaction: "+data.getTimestamp("lastTransactionDate").toDate());
 		l6.setFont(new Font(16));
 		
 		final Label l7= new Label("Account type: " + data.getString("accountType"));
 		l7.setFont(new Font(16));
 			
-		Label l8= new Label("Joined date: Today");
+		Label l8= new Label("Joined date: "+data.getString("joinedDate"));
 		l8.setFont(new Font(16));
 	
 		Separator sepL1 = new Separator();
@@ -482,8 +489,18 @@ public class Dashboard {
 		btnTransfer.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
-				final double amount = Double.parseDouble(t2.getText());
-				final long account = Long.parseLong(t1.getText());
+				final double amount;
+				final long account;
+				try {
+					amount = Double.parseDouble(t2.getText());
+					account = Long.parseLong(t1.getText());
+				} catch (NumberFormatException ex) {
+					ex.printStackTrace();
+					Alert alert = new Alert(AlertType.ERROR);
+					alert.setContentText("Invalid amount entry or account number");
+					alert.show();
+					return;
+				}
 				if (data.getDouble("balance") >= amount) {
 					DocumentReference docRef = db.collection("users").document(account+"");
 					final ApiFuture<WriteResult> future = docRef.update("balance", FieldValue.increment(amount));
@@ -497,8 +514,11 @@ public class Dashboard {
 						public void execute(Runnable command) {
 							try {
 								WriteResult result = future.get();
+								Map<String, Object> docData = new HashMap<>();
+								docData.put("balance", FieldValue.increment(-amount));
+								docData.put("lastTransactionDate", new Date());
 								DocumentReference docRef = db.collection("users").document(data.getId());
-								docRef.update("balance", FieldValue.increment(-amount));
+								docRef.update(docData);
 								System.out.println("Write result: " + result);
 								
 								Transaction t = new Transaction();
@@ -507,21 +527,29 @@ public class Dashboard {
 								t.transactionType = "Debit";
 								t.transactionId = 0;
 								t.transactionDate = new Date();
+								t.description = "CASH TRANSFER ACC " + account;
+								t.currentBalance = data.getDouble("balance") - amount;
+								t.debit = amount;
 								
 								db.collection("transactions").add(t);
 								
-								Transaction t2 = new Transaction();
-								t.accountId = account;
-								t.amount = amount;
-								t.transactionType = "Credit";
-								t.transactionId = 0;
-								t.transactionDate = new Date();
+								Transaction transaction2 = new Transaction();
+								transaction2.accountId = account;
+								transaction2.amount = amount;
+								transaction2.transactionType = "Credit";
+								transaction2.transactionId = 0;
+								transaction2.transactionDate = new Date();
+								t.description = "CASH RECEIVED ACC " + data.getLong("accountId");
+								t.currentBalance = amount;
+								t.credit = amount;
 								
-								db.collection("transactions").add(t);
+								db.collection("transactions").add(transaction2);
 								
 								DocumentReference stats = db.collection("info").document("stats");
 								stats.update("transactions", FieldValue.increment(1));
 								
+								t1.setText("");
+								t2.setText("");
 							}
 							catch (InterruptedException | ExecutionException e) {
 								Platform.runLater(new Runnable() {
@@ -567,7 +595,7 @@ public class Dashboard {
 		});
 
 		final TableView<Transaction> tableView = new TableView<Transaction>();
-		db.collection("transactions").whereEqualTo("accountId", data.getLong("accountId")).addSnapshotListener(new EventListener<QuerySnapshot>() {
+		db.collection("transactions").whereEqualTo("accountId", data.getLong("accountId")).orderBy("transactionDate").addSnapshotListener(new EventListener<QuerySnapshot>() {
 			@Override
 			public void onEvent(QuerySnapshot snapshots, 
 					FirestoreException error) {
@@ -619,6 +647,153 @@ public class Dashboard {
 				
 			}
 		});
+		Label l1 = new Label("Show statement from ");
+		final ToggleGroup group = new ToggleGroup();
+		RadioButton rb1 = new RadioButton("1 week");
+		RadioButton rb2 = new RadioButton("3 weeks");
+		RadioButton rb3 = new RadioButton("10 weeks");
+		rb1.setToggleGroup(group);
+		rb2.setToggleGroup(group);
+		rb3.setToggleGroup(group);
+		HBox hBox = new HBox(10, l1, rb1, rb2, rb3);
+		
+		final TableView<Transaction> tableView = new TableView<Transaction>();
+		rb1.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				// TODO Auto-generated method stub
+				 Calendar calendar = Calendar.getInstance();
+			      calendar.add(Calendar.WEEK_OF_YEAR, -1);
+			     final ApiFuture<QuerySnapshot> snapshots = db.collection("transactions")
+				.whereEqualTo("accountId", data.getLong("accountId"))
+				.whereGreaterThan("transactionDate", calendar.getTime())
+				.orderBy("transactionDate", Direction.DESCENDING).get();
+				snapshots.addListener(new Runnable() {
+					
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						
+					}
+				}, new Executor() {
+					
+					@Override
+					public void execute(Runnable arg0) {
+						try {
+							tableView.getItems().clear();
+							for (DocumentSnapshot  document : snapshots.get().getDocuments()) {
+								tableView.getItems().add(document.toObject(Transaction.class));
+							}
+						} catch (InterruptedException | ExecutionException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				});
+			}
+		});
+		rb2.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				// TODO Auto-generated method stub
+			    Calendar calendar = Calendar.getInstance();
+			      calendar.add(Calendar.WEEK_OF_YEAR, -3);
+			     final ApiFuture<QuerySnapshot> snapshots = db.collection("transactions")
+				.whereEqualTo("accountId", data.getLong("accountId"))
+				.whereGreaterThan("transactionDate", calendar.getTime())
+				.orderBy("transactionDate", Direction.DESCENDING).get();
+				snapshots.addListener(new Runnable() {
+					
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						
+					}
+				}, new Executor() {
+					
+					@Override
+					public void execute(Runnable arg0) {
+						try {
+							tableView.getItems().clear();
+							for (DocumentSnapshot  document : snapshots.get().getDocuments()) {
+								tableView.getItems().add(document.toObject(Transaction.class));
+							}
+						} catch (InterruptedException | ExecutionException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				});
+			}
+		});
+		rb3.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				// TODO Auto-generated method stub
+				 Calendar calendar = Calendar.getInstance();
+			      calendar.add(Calendar.WEEK_OF_YEAR, -10);
+			     final ApiFuture<QuerySnapshot> snapshots = db.collection("transactions")
+				.whereEqualTo("accountId", data.getLong("accountId"))
+				.whereGreaterThan("transactionDate", calendar.getTime())
+				.orderBy("transactionDate", Direction.DESCENDING).get();
+				snapshots.addListener(new Runnable() {
+					
+					@Override
+					public void run() {
+						// TODO Auto-generated method stub
+						
+					}
+				}, new Executor() {
+					
+					@Override
+					public void execute(Runnable arg0) {
+						try {
+							tableView.getItems().clear();
+							for (DocumentSnapshot  document : snapshots.get().getDocuments()) {
+								tableView.getItems().add(document.toObject(Transaction.class));
+							}
+						} catch (InterruptedException | ExecutionException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				});
+			}
+		});
+		
+		TableColumn<Transaction, String> column1 = 
+				new TableColumn<Transaction, String>("Date");
+		TableColumn<Transaction, String> column2 = 
+				new TableColumn<Transaction, String>("Description");
+        TableColumn transaction = new TableColumn("Transaction");
+		TableColumn<Transaction, String> column3 = 
+				new TableColumn<Transaction, String>("Credit");
+		TableColumn<Transaction, String> column4 = 
+				new TableColumn<Transaction, String>("Debit");
+		TableColumn<Transaction, String> column5 = 
+				new TableColumn<Transaction, String>("Balance");
+		transaction.getColumns().addAll(column3, column4, column5);
+		
+		column1.setCellValueFactory(new 
+				PropertyValueFactory<Transaction, String>("transactionDate"));
+		column2.setCellValueFactory(new 
+				PropertyValueFactory<Transaction, String>("description"));
+		column5.setCellValueFactory(new 
+				PropertyValueFactory<Transaction, String>("amount"));
+
+		column3.setCellValueFactory(new 
+				PropertyValueFactory<Transaction, String>("credit"));
+
+		column4.setCellValueFactory(new 
+				PropertyValueFactory<Transaction, String>("debit"));
+		
+		tableView.getColumns().addAll(column1, column2, transaction);
+		tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+		tableView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+
+		adBox.setPadding(new Insets(20));
+		adBox.getChildren().addAll(hBox, tableView);
+		
 		return adBox;
 	}
 	

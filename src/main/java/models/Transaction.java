@@ -8,6 +8,9 @@ public class Transaction {
 	public Date transactionDate;
 	public String transactionType;
 	public long accountId;
+	public String description;
+	public double currentBalance;
+	public double credit = 0, debit = 0;
 
 	public Transaction() {
 		// 
@@ -52,6 +55,40 @@ public class Transaction {
 	public void setAccountId(long accountId) {
 		this.accountId = accountId;
 	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public double getCurrentBalance() {
+		return currentBalance;
+	}
+
+	public void setCurrentBalance(double currentBalance) {
+		this.currentBalance = currentBalance;
+	}
+
+	public double getCredit() {
+		return credit;
+	}
+
+	public void setCredit(double credit) {
+		this.credit = credit;
+	}
+
+	public double getDebit() {
+		return debit;
+	}
+
+	public void setDebit(double debit) {
+		this.debit = debit;
+	}
+	
+	
 
 	
 	

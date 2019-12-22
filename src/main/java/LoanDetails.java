@@ -141,6 +141,8 @@ public class LoanDetails {
 								t.transactionType = "Debit";
 								t.transactionId = 0;
 								t.transactionDate = new Date();
+								t.description = "Bank Loan Granted";
+								t.credit = l.amount;
 								
 								db.collection("transactions").add(t);
 			

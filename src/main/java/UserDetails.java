@@ -265,7 +265,7 @@ public class UserDetails {
 				account.password = t3.getText();
 				account.approved = c2.getSelectionModel().getSelectedIndex() == 0;
 				try {
-				account.balance = Double.parseDouble(t5.getText());
+					account.balance = Double.parseDouble(t5.getText());
 				} catch (NumberFormatException ex) {
 					Alert alert = new Alert(AlertType.ERROR);
 					alert.setContentText("Please enter valid balance");
@@ -280,13 +280,11 @@ public class UserDetails {
 					public void run() {
 					}
 				}, new Executor() {
-					
 					@Override
 					public void execute(Runnable command) {
 						Platform.runLater(new Runnable() {
 							@Override
 							public void run() {
-
 								if (changes) {
 									DocumentReference stats = db.collection("info").document("stats");
 									stats.update("requests", account.approved ? FieldValue.increment(-1) : FieldValue.increment(1));

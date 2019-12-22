@@ -61,7 +61,7 @@ public class AdminPanel {
 		HBox header = new HBox(20);
 		VBox nav = new VBox(10);
 
-		header.setPrefHeight(200);
+		header.setPrefHeight(300);
 		header.setAlignment(Pos.CENTER);
 		Label title = new Label("AIAS Banking Admin Panel");
 		title.setFont(new Font(30));
@@ -110,14 +110,7 @@ public class AdminPanel {
 		nav.setAlignment(Pos.TOP_CENTER);
 		nav.setPrefWidth(200);
 		nav.setBackground(new Background(new BackgroundFill(Color.WHITE, CornerRadii.EMPTY,Insets.EMPTY)));
-
-		TextField search = new TextField();
-		Button btnSearch = new Button("Search");
-		btnSearch.setPrefWidth(100);
-
-		HBox searchBar = new HBox(10, search, btnSearch);
-		searchBar.setPadding(new Insets(10, 10, 0, 10));
-
+		
 		Button btnUsers =new Button("Users");
 		btnUsers.setPrefWidth(180);
 		btnUsers.setFont(navFont);
@@ -150,7 +143,10 @@ public class AdminPanel {
 			}
 		});
 
-		nav.getChildren().addAll(searchBar, btnUsers, btnAdmins, btnRequests);
+
+		Region r4 = new Region();
+		r4.setPrefWidth(10);
+		nav.getChildren().addAll(r4,btnUsers, btnAdmins, btnRequests);
 		nav.setPrefHeight(400);
 
 		txtUsers = new Label("0");

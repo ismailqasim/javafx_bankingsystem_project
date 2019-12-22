@@ -67,10 +67,10 @@ public class LoginPage {
 		title.setAlignment(Pos.CENTER);
 		
 		Label accountId = new Label("Enter your account ID:");
-		txtUsername = new TextField("31838");
+		txtUsername = new TextField("");
 		txtUsername.setMaxWidth(160);
 		txtPassword = new PasswordField();
-		txtPassword.setText("12345");
+		txtPassword.setText("");
 		txtPassword.setMaxWidth(160);
 		Label accountPassword = new Label("Enter your account password:");
 		

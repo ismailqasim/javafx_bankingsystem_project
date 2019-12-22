@@ -10,6 +10,7 @@ public class Account {
 	public double balance;
 	public String accountType;
 	public Date lastTransactionDate;
+	public String joinedDate;
 	public Boolean isSuspended = false;
 	public String gender;
 	public String password;
@@ -24,13 +25,15 @@ public class Account {
 			String lastName,
 			String accountType,
 			String gender,
-			String password) {
+			String password,
+			String joinedDate) {
 		this.accountId = accountId;
 		this.firstName = firstName;
 		this.lastName = lastName;
 		this.accountType = accountType;
 		this.gender = gender;
 		this.password = password;
+		this.joinedDate = joinedDate;
 		return this;
 	}
 
@@ -72,6 +75,14 @@ public class Account {
 
 	public void setAccountType(String accountType) {
 		this.accountType = accountType;
+	}
+	
+	public String getJoinedDate() {
+		return joinedDate;
+	}
+
+	public void setJoinedDate(String joinedDate) {
+		this.joinedDate = joinedDate;
 	}
 
 	@Override

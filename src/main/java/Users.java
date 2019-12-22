@@ -162,6 +162,7 @@ public class Users {
 				List<QueryDocumentSnapshot> documents;
 				try {
 					documents = future.get().getDocuments();
+					tableView.getItems().clear();
 					for (DocumentSnapshot document : documents) {
 						Account u = new Account();
 						u.accountId = document.getLong("accountId");
@@ -170,7 +171,6 @@ public class Users {
 						u.balance = document.getDouble("balance");
 						u.gender = document.getString("gender");
 						u.accountType = document.getString("accountType");
-						tableView.getItems().clear();
 						tableView.getItems().add(u);
 						System.out.println(u.toString());
 					}
