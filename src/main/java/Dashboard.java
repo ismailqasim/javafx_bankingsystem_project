@@ -1,18 +1,21 @@
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import com.google.api.core.ApiFuture;
 import com.google.api.gax.rpc.NotFoundException;
+import com.google.cloud.firestore.DocumentChange;
 import com.google.cloud.firestore.DocumentReference;
 import com.google.cloud.firestore.DocumentSnapshot;
 import com.google.cloud.firestore.EventListener;
 import com.google.cloud.firestore.FieldValue;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.FirestoreException;
+import com.google.cloud.firestore.QuerySnapshot;
 import com.google.cloud.firestore.WriteResult;
 import com.google.firebase.cloud.FirestoreClient;
 
@@ -28,14 +31,18 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.DialogEvent;
 import javafx.scene.control.Label;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
@@ -46,6 +53,9 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
+import models.Account;
+import models.Loan;
+import models.Transaction;
 
 public class Dashboard {
 	Font navFont = new Font(16);
@@ -70,6 +80,7 @@ public class Dashboard {
 	}
 	
 	public Dashboard(DocumentSnapshot data) {
+		Constant.ADMIN = false;
 		db = FirestoreClient.getFirestore();
 		this.data = data;
 		listenData();
@@ -168,6 +179,7 @@ public class Dashboard {
 						}
 					});
 					body.getTabs().add(tab); 
+					body.getSelectionModel().select(tab);
 				} else {
 					body.getSelectionModel().select(exist);
 				}
@@ -194,6 +206,7 @@ public class Dashboard {
 						}
 					});
 					body.getTabs().add(tab); 
+					body.getSelectionModel().select(tab);
 				} else {
 					body.getSelectionModel().select(exist);
 				}
@@ -218,6 +231,7 @@ public class Dashboard {
 						}
 					});
 					body.getTabs().add(tab); 
+					body.getSelectionModel().select(tab);
 				} else {
 					body.getSelectionModel().select(exist);
 				}
@@ -242,6 +256,7 @@ public class Dashboard {
 						}
 					});
 					body.getTabs().add(tab); 
+					body.getSelectionModel().select(tab);
 				} else {
 					body.getSelectionModel().select(exist);
 				}
@@ -266,6 +281,7 @@ public class Dashboard {
 						}
 					});
 					body.getTabs().add(tab); 
+					body.getSelectionModel().select(tab);
 				} else {
 					body.getSelectionModel().select(exist);
 				}
@@ -361,6 +377,79 @@ public class Dashboard {
 	
 	VBox loansTab() {
 		VBox adBox= new VBox(10);
+		HBox h1= new HBox(10);
+		h1.setAlignment(Pos.CENTER_LEFT);
+		Label labelLoan = new Label("How much loan you would like to get from bank?");
+		labelLoan.setFont(new Font(18));
+		final TextField loanText = new TextField();
+		Label label1 = new Label("Rs. ");
+		Label label2 = new Label("(Rs. 100 - Rs. 1000000)");
+        Button loanBtn = new Button("Request Loan");
+        Button btnHistory = new Button("View loan requests");
+        HBox hBox = new HBox(10, loanBtn, btnHistory);
+		adBox.getChildren().addAll(labelLoan,h1,hBox);
+		adBox.setPadding(new Insets(20));
+		h1.getChildren().addAll(label1,loanText,label2);
+		
+		btnHistory.setOnAction(new EventHandler<ActionEvent>() {
+			@Override
+			public void handle(ActionEvent event) {
+				new LoansHistory(data.getLong("accountId"));
+			}
+		});
+		loanBtn.setOnAction(new EventHandler<ActionEvent>() {
+
+			@Override
+			public void handle(ActionEvent event) {
+				try {
+					double amount = Double.parseDouble(loanText.getText());
+					if (amount >=100 && amount <=1000000){
+						Loan l = new Loan();
+						l.accountId = data.getLong("accountId");
+						l.amount = amount;
+						l.requestDate = new Date();
+						l.adminStatus = 0;
+						final ApiFuture<DocumentReference> future = db.collection("loans").add(l);
+						future.addListener(new Runnable() {
+							@Override
+							public void run() {
+								
+							}
+						}, new Executor() {
+							@Override
+							public void execute(Runnable arg0) {
+								Platform.runLater(new Runnable() {
+									
+									@Override
+									public void run() {
+
+										Alert alert= new Alert(AlertType.INFORMATION);
+										alert.setContentText("Loan request has been sent to bank. Please wait for their approval");
+										alert.showAndWait();
+										loanText.setText("");
+									}
+								});
+							}
+						});
+					}
+					else {
+						Alert alert= new Alert(AlertType.ERROR);
+						alert.setContentText("The amount must be above 100 Rupees and within 1 million");
+						alert.showAndWait();
+					}
+				}
+				catch(NumberFormatException e){
+					Alert alert= new Alert(AlertType.ERROR);
+					alert.setContentText("Invalid Entry");
+					alert.showAndWait();
+					
+				}
+			
+				
+			}
+		});
+		
+		
 		addListener(new onDashboardListener() {
 			@Override
 			public void onDocumentChange(DocumentSnapshot snapshot) {
@@ -394,8 +483,9 @@ public class Dashboard {
 			@Override
 			public void handle(ActionEvent event) {
 				final double amount = Double.parseDouble(t2.getText());
+				final long account = Long.parseLong(t1.getText());
 				if (data.getDouble("balance") >= amount) {
-					DocumentReference docRef = db.collection("users").document(t1.getText());
+					DocumentReference docRef = db.collection("users").document(account+"");
 					final ApiFuture<WriteResult> future = docRef.update("balance", FieldValue.increment(amount));
 					future.addListener(new Runnable() {
 						@Override
@@ -410,6 +500,28 @@ public class Dashboard {
 								DocumentReference docRef = db.collection("users").document(data.getId());
 								docRef.update("balance", FieldValue.increment(-amount));
 								System.out.println("Write result: " + result);
+								
+								Transaction t = new Transaction();
+								t.accountId = data.getLong("accountId");
+								t.amount = amount;
+								t.transactionType = "Debit";
+								t.transactionId = 0;
+								t.transactionDate = new Date();
+								
+								db.collection("transactions").add(t);
+								
+								Transaction t2 = new Transaction();
+								t.accountId = account;
+								t.amount = amount;
+								t.transactionType = "Credit";
+								t.transactionId = 0;
+								t.transactionDate = new Date();
+								
+								db.collection("transactions").add(t);
+								
+								DocumentReference stats = db.collection("info").document("stats");
+								stats.update("transactions", FieldValue.increment(1));
+								
 							}
 							catch (InterruptedException | ExecutionException e) {
 								Platform.runLater(new Runnable() {
@@ -453,6 +565,48 @@ public class Dashboard {
 				
 			}
 		});
+
+		final TableView<Transaction> tableView = new TableView<Transaction>();
+		db.collection("transactions").whereEqualTo("accountId", data.getLong("accountId")).addSnapshotListener(new EventListener<QuerySnapshot>() {
+			@Override
+			public void onEvent(QuerySnapshot snapshots, 
+					FirestoreException error) {
+				if (error != null) {
+					System.err.println("Listen failed:" + error);
+					return;
+				}
+				for (DocumentChange document : snapshots.getDocumentChanges()) {
+					switch (document.getType()) {
+					case ADDED:
+						tableView.getItems().add(document.getDocument().toObject(Transaction.class));
+					default:
+						break;
+					}
+				}
+			}
+		});
+		
+		TableColumn<Transaction, String> column1 = 
+				new TableColumn<Transaction, String>("Transaction Type");
+		TableColumn<Transaction, String> column2 = 
+				new TableColumn<Transaction, String>("Transaction Amount");
+		TableColumn<Transaction, String> column3 = 
+				new TableColumn<Transaction, String>("Transaction Date");
+		
+		column1.setCellValueFactory(new 
+				PropertyValueFactory<Transaction, String>("transactionType"));
+		column2.setCellValueFactory(new 
+				PropertyValueFactory<Transaction, String>("amount"));
+		column3.setCellValueFactory(new 
+				PropertyValueFactory<Transaction, String>("transactionDate"));
+		
+		tableView.getColumns().addAll(column1, column2, column3);
+		tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+		tableView.getSelectionModel().setSelectionMode(SelectionMode.SINGLE);
+
+		adBox.setPadding(new Insets(20));
+		adBox.getChildren().addAll(tableView);
+		
 		return adBox;
 	}
 	
@@ -486,7 +640,6 @@ public class Dashboard {
 	
 						@Override
 						public void run() {
-	
 							if (data.getBoolean("isSuspended")) {
 								System.out.println("Account suspended!");
 								

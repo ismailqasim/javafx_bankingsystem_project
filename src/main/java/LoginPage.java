@@ -32,6 +32,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.DialogEvent;
 import javafx.scene.control.Hyperlink;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -69,7 +70,7 @@ public class LoginPage {
 		txtUsername = new TextField("31838");
 		txtUsername.setMaxWidth(160);
 		txtPassword = new PasswordField();
-		txtPassword.setText("qwerty");
+		txtPassword.setText("12345");
 		txtPassword.setMaxWidth(160);
 		Label accountPassword = new Label("Enter your account password:");
 		
@@ -130,6 +131,16 @@ public class LoginPage {
 					alert.showAndWait();
 					return;
 				}
+				if (data.getBoolean("isSuspended")) {
+					System.out.println("Account suspended!");
+					
+					Alert alert = new Alert(AlertType.ERROR);
+					alert.setHeaderText("Account currently suspended!");
+					alert.setContentText("Your account is suspended!");
+					
+					alert.showAndWait();
+					return;
+				}
 				if (!data.getBoolean("approved")) {
 					Alert alert = new Alert(AlertType.ERROR);
 					alert.setHeaderText("Your account is not approved yet");
@@ -168,8 +179,10 @@ public class LoginPage {
 			List<QueryDocumentSnapshot> data = querySnapshot.get().getDocuments();
 			if (data.size() > 0) {
 				DocumentSnapshot document = data.get(0);
-				if (document.getString("password").equals(password)) {
-				System.out.println(document.getString("name"));
+					if (document.getString("password").equals(password)) {
+						System.out.println("Logged successfuly as admin");
+						new AdminPanel(document);
+						stage.close();
 				} else {
 					Alert alert = new Alert(AlertType.ERROR);
 					alert.setHeaderText("Invalid credentails!");

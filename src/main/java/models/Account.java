@@ -10,9 +10,11 @@ public class Account {
 	public double balance;
 	public String accountType;
 	public Date lastTransactionDate;
-	public Boolean isSuspended;
+	public Boolean isSuspended = false;
 	public String gender;
 	public String password;
+	public Boolean approved = false;
+	public Boolean admin = false;
 
 	public Account() {
 	}
@@ -31,4 +33,52 @@ public class Account {
 		this.password = password;
 		return this;
 	}
+
+	public String getFirstName() {
+		return firstName;
+	}
+
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
+
+	public String getLastName() {
+		return lastName;
+	}
+
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
+	}
+
+	public long getAccountId() {
+		return accountId;
+	}
+
+	public void setAccountId(long accountId) {
+		this.accountId = accountId;
+	}
+
+	public double getBalance() {
+		return balance;
+	}
+
+	public void setBalance(double balance) {
+		this.balance = balance;
+	}
+
+	public String getAccountType() {
+		return accountType;
+	}
+
+	public void setAccountType(String accountType) {
+		this.accountType = accountType;
+	}
+
+	@Override
+	public String toString() {
+		return "Account [firstName=" + firstName + ", accountId=" + accountId + "]";
+	}
+	
+	
+	
 }

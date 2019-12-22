@@ -1,8 +1,12 @@
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 
 import com.google.api.core.ApiFuture;
+import com.google.cloud.firestore.DocumentReference;
+import com.google.cloud.firestore.FieldValue;
 import com.google.cloud.firestore.Firestore;
 import com.google.cloud.firestore.WriteResult;
 import com.google.firebase.cloud.FirestoreClient;
@@ -127,6 +131,13 @@ public class RegisterPage {
 					@Override
 					public void run() {
 						// TODO Auto-generated method stub
+						
+						Map<String, Object> docData = new HashMap<>();
+						docData.put("requests", FieldValue.increment(1));
+						docData.put("users", FieldValue.increment(1));
+						DocumentReference docRef = db.collection("info").document("stats");
+						docRef.update(docData);
+						
 						scene.setCursor(Cursor.DEFAULT);
 						Alert alert = new Alert(AlertType.INFORMATION);
 						alert.setTitle("Account registered");
